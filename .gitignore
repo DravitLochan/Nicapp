@@ -7,3 +7,8 @@
 /build
 /captures
 .externalNativeBuild
+/Server/nbproject/private/
+/delete/nbproject/private/
+/delete/build/
+/Server/build/
+/Server/dist/
