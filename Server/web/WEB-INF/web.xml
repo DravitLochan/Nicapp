@@ -4,9 +4,17 @@
         <servlet-name>Register</servlet-name>
         <servlet-class>UserManagement.Register</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>Signup</servlet-name>
+        <servlet-class>DB.Signup</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>Register</servlet-name>
         <url-pattern>/Register</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>Signup</servlet-name>
+        <url-pattern>/Signup</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>
