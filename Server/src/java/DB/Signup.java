@@ -6,7 +6,6 @@
 package DB;
 
 import DB.DBConnect;
-import UserManagement.Register;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -74,7 +73,7 @@ public class Signup extends HttpServlet {
                 out.print(result);
             }
         } catch (JSONException ex) {
-            Logger.getLogger(Register.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Signup.class.getName()).log(Level.SEVERE, null, ex);
         }
         out.print(result);
     }
@@ -91,7 +90,16 @@ public class Signup extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        response.setContentType("application/json");
+        PrintWriter writer = response.getWriter();
+        JSONObject error = new JSONObject(true);
+        try {
+            error.put("status", false);
+            error.put("reason", "get method not supported");
+        } catch (JSONException ex) {
+            Logger.getLogger(Signup.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        writer.print(error);
     }
 
     /**
@@ -138,7 +146,7 @@ public class Signup extends HttpServlet {
             result.put("status", flag);
             result.put("reason", reason);
         } catch (JSONException ex) {
-            Logger.getLogger(Register.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Signup.class.getName()).log(Level.SEVERE, null, ex);
         }
         return result;
     }
