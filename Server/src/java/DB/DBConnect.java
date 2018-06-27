@@ -38,7 +38,8 @@ public class DBConnect {
      *
      * @return a Connection object
      */
-    public Connection connect() throws SQLException {
+    public Connection connect() throws SQLException, ClassNotFoundException {
+        Class.forName("org.postgresql.Driver");
         Connection conn = null;
         conn = DriverManager.getConnection(url, user, password);
         System.out.println("Connected to the PostgreSQL server successfully.");
@@ -49,6 +50,8 @@ public class DBConnect {
         try {
             getInstance().connect();
         } catch (SQLException ex) {
+            Logger.getLogger(DBConnect.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
             Logger.getLogger(DBConnect.class.getName()).log(Level.SEVERE, null, ex);
         }
     }

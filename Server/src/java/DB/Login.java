@@ -5,30 +5,33 @@
  */
 package DB;
 
-import DB.DBConnect;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 /**
  *
  * @author dravit
  */
-public class Signup extends HttpServlet {
+@WebServlet(name = "Login", urlPatterns = {"/Login"})
+public class Login extends HttpServlet {
 
+    private DBConnect dBConnect = DBConnect.getInstance();
+    
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -38,44 +41,30 @@ public class Signup extends HttpServlet {
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
-    private final String url = "jdbc:postgresql://localhost:5432/dravit";
-    private final String user = "dravit";
-    private final String password = "123456";
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-                response.setContentType("application/json");
+        response.setContentType("application/json");
         PrintWriter out = response.getWriter();
-        String email_id = request.getParameter("email");
         String user_id = request.getParameter("userid");
         String password = request.getParameter("password");
-        JSONObject result = validate(email_id, user_id, password);
+        JSONObject result = validate(user_id, password);
         try {
             boolean status = result.getBoolean("status");
             if(status){
-                // data was valid
-                try{
-                    Connection conn = connect();
-                    try{
-                        System.out.println("heere");
-                        regsiterUser(conn, email_id, user_id, password);
-                    } catch(Exception e){
-                        result.put("status", false);
-                        result.put("reason", e.getMessage());
-                        out.print(result);
-                    }
-                } catch(Exception e){
-                    result.put("status", false);
-                    result.put("reason", "Could not contact server");
-                    System.out.println("" + e.getMessage().toString());
-                    out.print(result);
-                }
+                Connection conn = dBConnect.connect();
+                boolean flag = loginUser(conn, user_id, password);
+                    result.put("status", flag);
+                out.print(result);
             } else {
                 out.print(result);
             }
         } catch (JSONException ex) {
-            Logger.getLogger(Signup.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SQLException ex) {
+            Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
         }
-        out.print(result);
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
@@ -90,16 +79,7 @@ public class Signup extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("application/json");
-        PrintWriter writer = response.getWriter();
-        JSONObject error = new JSONObject(true);
-        try {
-            error.put("status", false);
-            error.put("reason", "get method not supported");
-        } catch (JSONException ex) {
-            Logger.getLogger(Signup.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        writer.print(error);
+        processRequest(request, response);
     }
 
     /**
@@ -125,52 +105,43 @@ public class Signup extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
-    
-    private JSONObject validate(String email_id, String user_id, String password) {
+
+    private JSONObject validate(String user_id, String password){
         JSONObject result = new JSONObject(true);
         ArrayList<String> reason = new ArrayList<String>();
         boolean flag = true;
-        if(!Pattern.compile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$").matcher(email_id).matches()) {
+        /*if(!Pattern.compile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$").matcher(email).matches()) {
             reason.add("Invalid e-mail id");
             flag = false;
         }
-        if(user_id.trim().length() == 0){
-            reason.add("Invalid user id");
+        if(password.length() < 6){
             flag = false;
-        }
-        /*if(!Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$").matcher(email_id).matches()) {
-            reason.add("Invalid Password");
-            flag = false;
+            reason.add("Invalid password");
         }*/
         try {
             result.put("status", flag);
             result.put("reason", reason);
         } catch (JSONException ex) {
-            Logger.getLogger(Signup.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
         }
         return result;
     }
-
-    private void regsiterUser(Connection conn, String email_id, String user_id, String password) throws SQLException {
-        System.out.println("heere");
-        String sql = "INSERT INTO Users (EMAIL , USER_ID, PASSWORD) "
-            + "VALUES ('" + email_id + "', '"+ user_id +"', '" + password + "');";
-        System.out.println(sql);
+    
+    private boolean loginUser(Connection conn, String user_id, String password) throws SQLException{
+        String login_stmt = "SELECT * FROM users WHERE user_id = '" + user_id + "' AND password = '" + password + "';";
         Statement stmt = null;
+        boolean flag = false;
         conn.setAutoCommit(false);
         stmt = conn.createStatement();
-        int s = stmt.executeUpdate(sql);
-        System.out.println("" + s);
+        ResultSet rs = stmt.executeQuery(login_stmt);
+        while(rs.next()){
+            if(password.equals(rs.getString("password")) && user_id.equals(rs.getString("user_id"))){
+                flag = true;
+            }
+        }
         stmt.close();
         conn.commit();
         conn.close();
-    }
-    
-    public Connection connect() throws SQLException, ClassNotFoundException {
-        Class.forName("org.postgresql.Driver");
-        Connection conn = null;
-        conn = DriverManager.getConnection(url, user, password);
-        System.out.println("Connected to the PostgreSQL server successfully.");
-        return conn;
+        return flag;
     }
 }
