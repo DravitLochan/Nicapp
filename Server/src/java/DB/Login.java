@@ -134,10 +134,21 @@ public class Login extends HttpServlet {
         conn.setAutoCommit(false);
         stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(login_stmt);
+        System.out.println("flag = " + flag);
+        // System.out.println("Query : " + login_stmt);
         while(rs.next()){
+            /*
+            System.out.println("Here : " + login_stmt);
+            System.out.println("Password : " + rs.getString("password"));
+            System.out.println("user_id : " + rs.getString("user_id"));
+            System.out.println("user_id : " + user_id.equals(rs.getString("user_id")));
+            System.out.println("Password : " + password.equals(rs.getString("password")));
             if(password.equals(rs.getString("password")) && user_id.equals(rs.getString("user_id"))){
                 flag = true;
+                System.out.println("Flag : " + flag);
             }
+            */
+            flag = true;
         }
         stmt.close();
         conn.commit();
